@@ -32,10 +32,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http
 				.authorizeRequests()
-					.antMatchers("/css/**", "/index").permitAll()
+					.antMatchers("/css/**", "/index", "/favicon.ico").permitAll()
 					.antMatchers("/user/**").hasRole("USER")
+					.anyRequest().authenticated()
 					.and()
-				.formLogin().loginPage("/login").failureUrl("/login-error");
+				.formLogin()
+					.loginPage("/login")
+					.failureUrl("/login-error")
+					.permitAll();
 	}
 	// @formatter:on
 

@@ -16,6 +16,9 @@ spring:
 security:
   oauth2:
     client:
+      client-id: token-keys-client
+      client-secret: secret
+    clients:
       messaging-app-client:
         client-id: messaging-app-client
         client-secret: secret
@@ -23,6 +26,8 @@ security:
         access-token-uri: ${server.url}/oauth/token
         scope: message.read, message.write
         pre-established-redirect-uri: ${server.url}/messaging
+    resource:
+      jwk-set-uri: https://uaa.run.pivotal.io/token_keys
 
 messages:
   base-uri: ${server.url}/messages

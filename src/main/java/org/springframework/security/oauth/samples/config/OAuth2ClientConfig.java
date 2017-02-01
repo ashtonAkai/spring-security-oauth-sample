@@ -45,7 +45,7 @@ public class OAuth2ClientConfig {
 		return new OAuth2RestTemplate(messagingAppClientDetails, oauth2ClientContext);
 	}
 
-	@ConfigurationProperties(prefix = "security.oauth2.client.messaging-app-client")
+	@ConfigurationProperties(prefix = "security.oauth2.clients.messaging-app-client")
 	@Bean
 	public OAuth2ProtectedResourceDetails messagingAppClientDetails() {
 		return new AuthorizationCodeResourceDetails();

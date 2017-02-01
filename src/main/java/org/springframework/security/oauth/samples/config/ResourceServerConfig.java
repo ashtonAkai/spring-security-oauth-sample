@@ -36,7 +36,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
 	@Override
 	public void configure(ResourceServerSecurityConfigurer security) throws Exception {
-		security.resourceId(RESOURCE_ID).tokenStore(tokenStore);
+		security.resourceId(RESOURCE_ID).tokenStore(this.tokenStore);
 	}
 
 	@Override

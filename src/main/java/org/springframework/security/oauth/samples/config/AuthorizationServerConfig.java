@@ -49,7 +49,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-		super.configure(security);
+		security.tokenKeyAccess("permitAll()");
 	}
 
 	@Override
@@ -62,9 +62,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 				.scopes("message.read", "message.write")
 				.secret("secret")
 				.redirectUris(serverUrl + "/messaging")
-				.accessTokenValiditySeconds(60)
+				.accessTokenValiditySeconds(60 * 60)
 				.and()
-			.withClient("basic-client")
+			.withClient("token-keys-client")
 				.authorizedGrantTypes("client_credentials")
 				.authorities("ROLE_CLIENT", "ROLE_MESSAGING_CLIENT")
 				.scopes("message.read")
@@ -98,7 +98,8 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
 	@Bean
 	public JwtAccessTokenConverter accessTokenConverter() {
-		return new JwtAccessTokenConverter();
+		JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+		return converter;
 	}
 
 	@Bean
