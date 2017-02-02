@@ -26,6 +26,7 @@ import org.springframework.security.jwt.crypto.sign.SignatureVerifier;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;
 import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
+import org.springframework.security.oauth2.common.util.JsonParserFactory;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.util.Assert;
@@ -45,6 +46,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Joe Grandja
  */
 public class JwkTokenStore implements TokenStore {
+	private static final String KEY_ID_ATTRIBUTE = "kid";
+	private static final String ALGORITHM_ATTRIBUTE = "alg";
 	private final JwtTokenStore delegate;
 
 	public JwkTokenStore(String jwkSetUrl) {
@@ -122,43 +125,59 @@ public class JwkTokenStore implements TokenStore {
 
 	private static class JwkVerifyingJwtAccessTokenConverter extends JwtAccessTokenConverter {
 		private final JwkDefinitionSource jwkDefinitionSource;
-
-//		private JsonParser objectMapper = JsonParserFactory.create();
+		private final org.springframework.security.oauth2.common.util.JsonParser jsonParser;
 
 		private JwkVerifyingJwtAccessTokenConverter(JwkDefinitionSource jwkDefinitionSource) {
 			this.jwkDefinitionSource = jwkDefinitionSource;
+			this.jsonParser = JsonParserFactory.create();
 		}
 
 		@Override
 		protected Map<String, Object> decode(String token) {
 			try {
-				Jwt jwt = JwtHelper.decode(token);
+				Map<String, String> headers = JwtParser.parseHeaders(token);
 
-				// Extract kid from Jwt
-				String kid = null;
-
-				SignatureVerifier verifier = this.jwkDefinitionSource.getVerifier(kid);
-				if (verifier == null) {
-					throw new InvalidTokenException("Invalid JWT token");
+				// Validate "kid" header
+				String keyIdHeader = headers.get(KEY_ID_ATTRIBUTE);
+				if (keyIdHeader == null) {
+					throw new JwkException("Invalid JWT/JWS: \"" + KEY_ID_ATTRIBUTE + "\" is a required JOSE Header.");
 				}
-//				jwt.verifySignature(jwkDefinition.getVerifier());
+				JwkDefinition jwkDefinition = this.jwkDefinitionSource.getDefinitionRefreshIfNecessary(keyIdHeader);
+				if (jwkDefinition == null) {
+					throw new JwkException("Invalid JOSE Header \"" + KEY_ID_ATTRIBUTE + "\" (" + keyIdHeader + ")");
+				}
 
-//				String claimsStr = jwt.getClaims();
-//				Map<String, Object> claims = objectMapper.parseMap(claimsStr);
-//				if (claims.containsKey(EXP) && claims.get(EXP) instanceof Integer) {
-//					Integer intValue = (Integer) claims.get(EXP);
-//					claims.put(EXP, new Long(intValue));
-//				}
-//				return claims;
-				return null;
+				// Validate "alg" header
+				String algorithmHeader = headers.get(ALGORITHM_ATTRIBUTE);
+				if (algorithmHeader == null) {
+					throw new JwkException("Invalid JWT/JWS: \"" + ALGORITHM_ATTRIBUTE + "\" is a required JOSE Header.");
+				}
+				if (!algorithmHeader.equals(jwkDefinition.getAlgorithm().headerParamValue())) {
+					throw new JwkException("Invalid JOSE Header \"" + ALGORITHM_ATTRIBUTE + "\" (" + algorithmHeader + ")" +
+							" does not match algorithm associated with \"" + KEY_ID_ATTRIBUTE + "\" (" + keyIdHeader + ")");
+				}
+
+				// Verify signature
+				SignatureVerifier verifier = this.jwkDefinitionSource.getVerifier(keyIdHeader);
+				Jwt jwt = JwtHelper.decode(token);
+				jwt.verifySignature(verifier);
+
+				Map<String, Object> claims = this.jsonParser.parseMap(jwt.getClaims());
+				if (claims.containsKey(EXP) && claims.get(EXP) instanceof Integer) {
+					Integer expiryInt = (Integer) claims.get(EXP);
+					claims.put(EXP, new Long(expiryInt));
+				}
+
+				return claims;
+
 			} catch (Exception ex) {
-				throw new InvalidTokenException("Cannot convert access token to JSON", ex);
+				throw new InvalidTokenException("Failed to convert JWT/JWS: " + ex.getMessage(), ex);
 			}
 		}
 
 		@Override
 		protected String encode(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
-			throw new UnsupportedOperationException("JWT Signing not supported");
+			throw new UnsupportedOperationException("JWT/JWS (signing) is currently not supported.");
 		}
 	}
 
@@ -241,9 +260,41 @@ public class JwkTokenStore implements TokenStore {
 		}
 	}
 
+	private static class JwtParser {
+		private static final JsonFactory factory = new JsonFactory();
+
+		private static Map<String, String> parseHeaders(String token) throws IOException {
+			Map<String, String> headers;
+
+			int headerEndIndex = token.indexOf('.');
+			if (headerEndIndex == -1) {
+				throw new IllegalArgumentException("Invalid JWT. Missing JOSE Header.");
+			}
+			byte[] decodedHeader = Codecs.b64UrlDecode(token.substring(0, headerEndIndex));
+
+			JsonParser parser = factory.createParser(decodedHeader);
+			try {
+				headers = new HashMap<>();
+				if (parser.nextToken() == JsonToken.START_OBJECT) {
+					while (parser.nextToken() == JsonToken.FIELD_NAME) {
+						String headerName = parser.getCurrentName();
+						parser.nextToken();
+						String headerValue = parser.getValueAsString();
+						headers.put(headerName, headerValue);
+					}
+				}
+
+			} finally {
+				try {
+					parser.close();
+				} catch (IOException ex) { }
+			}
+
+			return headers;
+		}
+	}
+
 	private static class JwkSetParser {
-		private static final String KEY_ID_ATTRIBUTE = "kid";
-		private static final String ALGORITHM_ATTRIBUTE = "alg";
 		private static final String KEY_TYPE_ATTRIBUTE = "kty";
 		private static final String PUBLIC_KEY_USE_ATTRIBUTE = "use";
 		private static final String RSA_PUBLIC_KEY_MODULUS_ATTRIBUTE = "n";
