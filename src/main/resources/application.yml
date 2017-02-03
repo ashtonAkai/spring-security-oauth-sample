@@ -1,6 +1,5 @@
 server:
-  port: 8080
-  url: http://localhost:${server.port}
+  port: 8090
 
 logging:
   level:
@@ -15,19 +14,5 @@ spring:
 
 security:
   oauth2:
-    client:
-      client-id: token-keys-client
-      client-secret: secret
-    clients:
-      messaging-app-client:
-        client-id: messaging-app-client
-        client-secret: secret
-        user-authorization-uri: ${server.url}/oauth/authorize
-        access-token-uri: ${server.url}/oauth/token
-        scope: message.read, message.write
-        pre-established-redirect-uri: ${server.url}/messaging
     resource:
-      jwk-set-uri: https://uaa.run.pivotal.io/token_keys
-
-messages:
-  base-uri: ${server.url}/messages
+      jwk-set-uri: http://test.localhost:8080/uaa/token_keys

@@ -16,7 +16,6 @@
 package org.springframework.security.oauth.samples.web;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
@@ -33,22 +32,6 @@ public class DefaultController {
 	@RequestMapping("/index")
 	public String index() {
 		return "index";
-	}
-
-	@RequestMapping("/user/index")
-	public String userIndex() {
-		return "user/index";
-	}
-
-	@RequestMapping("/login")
-	public String login() {
-		return "login";
-	}
-
-	@RequestMapping("/login-error")
-	public String loginError(Model model) {
-		model.addAttribute("loginError", true);
-		return login();
 	}
 
 }

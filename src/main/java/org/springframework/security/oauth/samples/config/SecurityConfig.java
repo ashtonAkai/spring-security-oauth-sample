@@ -15,8 +15,6 @@
  */
 package org.springframework.security.oauth.samples.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -33,22 +31,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		http
 				.authorizeRequests()
 					.antMatchers("/css/**", "/index", "/favicon.ico").permitAll()
-					.antMatchers("/user/**").hasRole("USER")
-					.anyRequest().authenticated()
-					.and()
-				.formLogin()
-					.loginPage("/login")
-					.failureUrl("/login-error")
-					.permitAll();
+					.anyRequest().authenticated();
 	}
 	// @formatter:on
 
-	// @formatter:off
-	@Autowired
-	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth
-			.inMemoryAuthentication()
-				.withUser("user").password("password").roles("USER");
-	}
-	// @formatter:on
 }
