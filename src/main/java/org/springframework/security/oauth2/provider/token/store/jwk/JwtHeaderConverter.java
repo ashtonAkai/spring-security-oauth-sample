@@ -37,7 +37,7 @@ class JwtHeaderConverter implements Converter<String, Map<String, String>> {
 
 		int headerEndIndex = token.indexOf('.');
 		if (headerEndIndex == -1) {
-			throw new IllegalArgumentException("Invalid JWT. Missing JOSE Header.");
+			throw new JwkException("Invalid JWT. Missing JOSE Header.");
 		}
 		byte[] decodedHeader = Codecs.b64UrlDecode(token.substring(0, headerEndIndex));
 

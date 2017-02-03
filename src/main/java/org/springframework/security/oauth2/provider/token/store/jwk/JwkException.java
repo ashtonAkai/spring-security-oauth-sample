@@ -15,10 +15,12 @@
  */
 package org.springframework.security.oauth2.provider.token.store.jwk;
 
+import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
+
 /**
  * @author Joe Grandja
  */
-public class JwkException extends RuntimeException {
+public class JwkException extends OAuth2Exception {
 
 	public JwkException(String message) {
 		super(message);
@@ -26,5 +28,15 @@ public class JwkException extends RuntimeException {
 
 	public JwkException(String message, Throwable cause) {
 		super(message, cause);
+	}
+
+	@Override
+	public String getOAuth2ErrorCode() {
+		return "server_error";
+	}
+
+	@Override
+	public int getHttpErrorCode() {
+		return 500;
 	}
 }

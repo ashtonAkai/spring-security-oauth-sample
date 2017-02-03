@@ -19,7 +19,6 @@ import org.springframework.security.jwt.Jwt;
 import org.springframework.security.jwt.JwtHelper;
 import org.springframework.security.jwt.crypto.sign.SignatureVerifier;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
-import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
 import org.springframework.security.oauth2.common.util.JsonParser;
 import org.springframework.security.oauth2.common.util.JsonParserFactory;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
@@ -81,12 +80,12 @@ class JwkVerifyingJwtAccessTokenConverter extends JwtAccessTokenConverter {
 			return claims;
 
 		} catch (Exception ex) {
-			throw new InvalidTokenException("Failed to convert JWT/JWS: " + ex.getMessage(), ex);
+			throw new JwkException("Failed to decode/verify the JWT/JWS: " + ex.getMessage(), ex);
 		}
 	}
 
 	@Override
 	protected String encode(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
-		throw new UnsupportedOperationException("JWT/JWS (signing) is currently not supported.");
+		throw new JwkException("JWT/JWS (signing) is currently not supported.");
 	}
 }
