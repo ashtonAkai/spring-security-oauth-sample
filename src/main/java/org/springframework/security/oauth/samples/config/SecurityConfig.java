@@ -30,7 +30,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http
 				.authorizeRequests()
-					.antMatchers("/css/**", "/index", "/favicon.ico").permitAll()
+					.antMatchers("/", "/css/**", "/index", "/favicon.ico").permitAll()
 					.anyRequest().authenticated();
 	}
 	// @formatter:on
