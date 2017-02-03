@@ -18,6 +18,7 @@ package org.springframework.security.oauth2.provider.token.store.jwk;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.jwt.codec.Codecs;
 
 import java.io.IOException;
@@ -27,10 +28,11 @@ import java.util.Map;
 /**
  * @author Joe Grandja
  */
-class JwtParser {
-	private static final JsonFactory factory = new JsonFactory();
+class JwtHeaderConverter implements Converter<String, Map<String, String>> {
+	private final JsonFactory factory = new JsonFactory();
 
-	static Map<String, String> parseHeaders(String token) throws IOException {
+	@Override
+	public Map<String, String> convert(String token) {
 		Map<String, String> headers;
 
 		int headerEndIndex = token.indexOf('.');
@@ -39,8 +41,10 @@ class JwtParser {
 		}
 		byte[] decodedHeader = Codecs.b64UrlDecode(token.substring(0, headerEndIndex));
 
-		JsonParser parser = factory.createParser(decodedHeader);
+		JsonParser parser = null;
+
 		try {
+			parser = this.factory.createParser(decodedHeader);
 			headers = new HashMap<>();
 			if (parser.nextToken() == JsonToken.START_OBJECT) {
 				while (parser.nextToken() == JsonToken.FIELD_NAME) {
@@ -51,9 +55,11 @@ class JwtParser {
 				}
 			}
 
+		} catch (IOException ex) {
+			throw new JwkException("An I/O error occurred while reading the JWT: " + ex.getMessage(), ex);
 		} finally {
 			try {
-				parser.close();
+				if (parser != null) parser.close();
 			} catch (IOException ex) { }
 		}
 

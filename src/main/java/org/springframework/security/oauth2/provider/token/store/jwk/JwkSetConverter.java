@@ -18,10 +18,11 @@ package org.springframework.security.oauth2.provider.token.store.jwk;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -33,14 +34,17 @@ import static org.springframework.security.oauth2.provider.token.store.jwk.JwkAt
 /**
  * @author Joe Grandja
  */
-class JwkSetParser {
-	private static final JsonFactory factory = new JsonFactory();
+class JwkSetConverter implements Converter<InputStream, Set<JwkDefinition>> {
+	private final JsonFactory factory = new JsonFactory();
 
-	static Set<JwkDefinition> parse(URL jwkSetUrl) throws IOException {
+	@Override
+	public Set<JwkDefinition> convert(InputStream jwkSetSource) {
 		Set<JwkDefinition> jwkDefinitions;
+		JsonParser parser = null;
 
-		JsonParser parser = factory.createParser(jwkSetUrl);
 		try {
+			parser = this.factory.createParser(jwkSetSource);
+
 			if (parser.nextToken() != JsonToken.START_OBJECT) {
 				throw new JwkException("Invalid JWK Set Object.");
 			}
@@ -72,17 +76,18 @@ class JwkSetParser {
 				attributes.clear();
 			}
 
+		} catch (IOException ex) {
+			throw new JwkException("An I/O error occurred while reading the JWK Set: " + ex.getMessage(), ex);
 		} finally {
 			try {
-				parser.close();
-			} catch (IOException ex) {
-			}
+				if (parser != null) parser.close();
+			} catch (IOException ex) { }
 		}
 
 		return jwkDefinitions;
 	}
 
-	private static JwkDefinition createJwkDefinition(Map<String, String> attributes) {
+	private JwkDefinition createJwkDefinition(Map<String, String> attributes) {
 		JwkDefinition.KeyType keyType =
 				JwkDefinition.KeyType.fromValue(attributes.get(KEY_TYPE));
 
@@ -94,7 +99,7 @@ class JwkSetParser {
 		return createRSAJwkDefinition(attributes);
 	}
 
-	private static JwkDefinition createRSAJwkDefinition(Map<String, String> attributes) {
+	private JwkDefinition createRSAJwkDefinition(Map<String, String> attributes) {
 		// kid
 		String keyId = attributes.get(KEY_ID);
 		if (!StringUtils.hasText(keyId)) {

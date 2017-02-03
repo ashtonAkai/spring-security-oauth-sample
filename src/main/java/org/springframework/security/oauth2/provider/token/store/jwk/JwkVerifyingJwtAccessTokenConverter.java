@@ -35,17 +35,17 @@ import static org.springframework.security.oauth2.provider.token.store.jwk.JwkAt
  */
 class JwkVerifyingJwtAccessTokenConverter extends JwtAccessTokenConverter {
 	private final JwkDefinitionSource jwkDefinitionSource;
-	private final JsonParser jsonParser;
+	private final JwtHeaderConverter jwtHeaderConverter = new JwtHeaderConverter();
+	private final JsonParser jsonParser = JsonParserFactory.create();
 
 	JwkVerifyingJwtAccessTokenConverter(JwkDefinitionSource jwkDefinitionSource) {
 		this.jwkDefinitionSource = jwkDefinitionSource;
-		this.jsonParser = JsonParserFactory.create();
 	}
 
 	@Override
 	protected Map<String, Object> decode(String token) {
 		try {
-			Map<String, String> headers = JwtParser.parseHeaders(token);
+			Map<String, String> headers = this.jwtHeaderConverter.convert(token);
 
 			// Validate "kid" header
 			String keyIdHeader = headers.get(KEY_ID);

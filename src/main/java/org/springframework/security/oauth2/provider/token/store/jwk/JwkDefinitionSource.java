@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class JwkDefinitionSource {
 	private final URL jwkSetUrl;
+	private final JwkSetConverter jwkSetConverter = new JwkSetConverter();
 	private final AtomicReference<Map<JwkDefinition, SignatureVerifier>> jwkDefinitions = new AtomicReference<>(new HashMap<>());
 
 	JwkDefinitionSource(String jwkSetUrl) {
@@ -79,7 +80,7 @@ class JwkDefinitionSource {
 	private void refreshJwkDefinitions() {
 		Set<JwkDefinition> jwkDefinitionSet;
 		try {
-			jwkDefinitionSet = JwkSetParser.parse(this.jwkSetUrl);
+			jwkDefinitionSet = this.jwkSetConverter.convert(this.jwkSetUrl.openStream());
 		} catch (IOException ex) {
 			throw new JwkException("An I/O error occurred while refreshing the JWK Set: " + ex.getMessage(), ex);
 		}
