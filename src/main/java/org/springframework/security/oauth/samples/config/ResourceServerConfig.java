@@ -15,15 +15,11 @@
  */
 package org.springframework.security.oauth.samples.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStore;
 
 /**
  * @author Joe Grandja
@@ -33,12 +29,9 @@ import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStor
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 	private static final String RESOURCE_ID = "api";
 
-	@Value("${security.oauth2.resource.jwk-set-uri}")
-	private String jwkSetUrl;
-
 	@Override
 	public void configure(ResourceServerSecurityConfigurer security) throws Exception {
-		security.resourceId(RESOURCE_ID).tokenStore(this.tokenStore());
+		security.resourceId(RESOURCE_ID);
 	}
 
 	@Override
@@ -49,11 +42,5 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 			.authorizeRequests()
 				.antMatchers("/messages/**").access("#oauth2.hasScope('api.read')");
 		// @formatter:on
-	}
-
-	@Bean
-	public TokenStore tokenStore() {
-		JwkTokenStore tokenStore = new JwkTokenStore(this.jwkSetUrl);
-		return tokenStore;
 	}
 }
