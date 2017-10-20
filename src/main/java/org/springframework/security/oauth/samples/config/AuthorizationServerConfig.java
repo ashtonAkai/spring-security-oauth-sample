@@ -19,9 +19,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerEndpointsConfiguration;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.ClientDetailsService;
@@ -38,7 +39,8 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
  * @author Joe Grandja
  */
 @Configuration
-@EnableAuthorizationServer
+//@EnableAuthorizationServer
+@Import({AuthorizationServerEndpointsConfiguration.class, CustomAuthorizationServerSecurityConfiguration.class})
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
 
 	@Autowired
@@ -49,7 +51,12 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-		super.configure(security);
+//		security.sslOnly();
+
+		// security.sslOnly() results in an exception - this is a bug see gh-638
+		//
+		// AuthorizationServerSecurityConfigurer.configure(HttpSecurity http) calls -> http.requiresChannel().anyRequest().requiresSecure()
+		// To resolve the bug move it to -> AuthorizationServerSecurityConfigurer.init(HttpSecurity http)
 	}
 
 	@Override
@@ -106,5 +113,4 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 		InMemoryApprovalStore store = new InMemoryApprovalStore();
 		return store;
 	}
-
 }
